@@ -1,17 +1,23 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
+	"os"
+
+	touch2 "golang.org/x/mobile/event/touch"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/driver/software"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"github.com/kenshaw/evdev"
 
 	"rm-cal/rmkit"
 )
@@ -51,6 +57,9 @@ func main() {
 	item1Button := widget.NewButton("Start Tutorial", func() {})
 	item1Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
 	item1Button.IconPlacement = widget.ButtonIconTrailingText
+	item1Button.OnTapped = func() {
+		item1Button.SetText("Tutorial Started")
+	}
 
 	item1Image := canvas.NewImageFromResource(theme.FyneLogo())
 	item1Image.FillMode = canvas.ImageFillContain
@@ -71,6 +80,9 @@ func main() {
 	item2Button := widget.NewButton("Start Tutorial", func() {})
 	item2Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
 	item2Button.IconPlacement = widget.ButtonIconTrailingText
+	item2Button.OnTapped = func() {
+		item2Button.SetText("Tutorial Started")
+	}
 
 	item2Image := canvas.NewImageFromResource(theme.FyneLogo())
 	item2Image.FillMode = canvas.ImageFillContain
@@ -98,32 +110,111 @@ func main() {
 
 	s := canvas.NewRectangle(rmkit.White)
 	s.SetMinSize(fyne.NewSize(10, 10))
+	//
+	// c := software.NewCanvas()
+	// c.SetContent(container.NewBorder(s, s, s, s, con))
+	// c.Resize(fyne.NewSize(float32(fb.Bounds().Dx()), float32(fb.Bounds().Dy())))
+	//
+	// i := software.RenderCanvas(c, t)
+	//
+	// fmt.Println("Rendered canvas")
+	//
+	// draw.Draw(fb, fb.Bounds(), i, image.Point{}, draw.Src)
+	// m, err = rmkit.Redraw(fb, false)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	//
+	// fmt.Println("Redrew screen, ", m)
+	//
+	// err = rmkit.WaitForRedraw(fb, m)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	//
+	// fmt.Println("Waited for redraw")
 
-	c := software.NewCanvas()
-	c.SetContent(container.NewBorder(s, s, s, s, con))
-	c.Resize(fyne.NewSize(float32(fb.Bounds().Dx()), float32(fb.Bounds().Dy())))
+	eC := make(chan any)
 
-	i := software.RenderCanvas(c, t)
+	a := app.NewWithSoftwareDriver("test", func(i image.Image) {
+		draw.Draw(fb, fb.Bounds(), i, image.Point{}, draw.Src)
+		m, err = rmkit.Redraw(fb, false)
+		if err != nil {
+			if err.Error() == "nothing to redraw" {
+				return
+			}
+			panic(err)
+		}
 
-	fmt.Println("Rendered canvas")
+		fmt.Println("Redrew screen, ", m)
+		err = rmkit.WaitForRedraw(fb, m)
+		if err != nil {
+			panic(err)
+		}
+	}, eC)
 
-	draw.Draw(fb, fb.Bounds(), i, image.Point{}, draw.Src)
-	m, err = rmkit.Redraw(fb, false)
+	a.Settings().SetTheme(t)
+
+	w := a.NewWindow("test")
+	w.SetContent(container.NewBorder(s, s, s, s, con))
+	w.Resize(fyne.NewSize(float32(fb.Bounds().Dx()), float32(fb.Bounds().Dy())))
+	w.SetFullScreen(true)
+	w.SetFixedSize(true)
+
+	touchF, err := os.Open("/dev/input/event2")
 	if err != nil {
 		panic(err)
 	}
+	defer touchF.Close()
 
-	fmt.Println("Redrew screen, ", m)
-
-	err = rmkit.WaitForRedraw(fb, m)
-	if err != nil {
-		panic(err)
+	touch := evdev.OpenReader(touchF)
+	if touch == nil {
+		panic("could not open touch")
 	}
+	defer touch.Close()
 
-	fmt.Println("Waited for redraw")
+	touchC := touch.Poll(context.Background())
+
+	go func() {
+		touchEv := touch2.Event{}
+		for {
+			select {
+			case e := <-touchC:
+				ev := e.Event
+				if ev.Code == uint16(evdev.AbsoluteMTPositionX) {
+					// ev.Code = uint16(evdev.AbsoluteMTPositionY)
+					ev.Value = 767 - ev.Value
+					// ev.Value = ev.Value * 10
+					touchEv.X = xRatio * float32(ev.Value)
+				} else if ev.Code == uint16(evdev.AbsoluteMTPositionY) {
+					// ev.Code = uint16(evdev.AbsoluteMTPositionX)
+					// ev.Value = ev.Value * 10
+					ev.Value = 1023 - ev.Value
+					touchEv.Y = yRatio * float32(ev.Value)
+				} else if ev.Code == uint16(evdev.AbsoluteMTTrackingID) {
+					if ev.Value == -1 {
+						touchEv.Type = touch2.TypeEnd
+					} else {
+						if touchEv.Type == touch2.TypeEnd {
+							touchEv.Type = touch2.TypeBegin
+						} else {
+							touchEv.Type = touch2.TypeMove
+						}
+					}
+				} else if ev.Type == evdev.EventSync {
+					eC <- touchEv
+				}
+			}
+		}
+	}()
+
+	w.ShowAndRun()
 
 	fmt.Println("Exiting...")
 }
+
+const xRatio = float32(1404) / float32(767)
+const yRatio = float32(1872) / float32(1023)
 
 func frame(c fyne.CanvasObject) fyne.CanvasObject {
 	s1 := canvas.NewRectangle(color.RGBA{0, 0, 0, 0})

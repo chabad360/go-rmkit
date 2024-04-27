@@ -38,6 +38,10 @@ func InitRM() (*framebuffer.Device, error) {
 }
 
 func Redraw(fb *framebuffer.Device, fullScreen bool) (uint32, error) {
+	if fb.Dirty() == image.Rect(0, 0, 0, 0) && !fullScreen {
+		return 0, errors.New("nothing to redraw")
+	}
+
 	var updateRect MxcfbRect
 	if fullScreen {
 		updateRect = MxcfbRect{
@@ -61,7 +65,7 @@ func Redraw(fb *framebuffer.Device, fullScreen bool) (uint32, error) {
 
 	updateData := MxcfbUpdateData{
 		UpdateRegion: updateRect,
-		WaveformMode: WAVEFORM_MODE_INIT,
+		WaveformMode: WaveformModeInit,
 		UpdateMode:   UPDATE_MODE_FULL,
 		DitherMode:   EDPC_FLAG_EXP1,
 		Temp:         TEMP_USE_REMARKABLE_DRAW,
@@ -69,7 +73,7 @@ func Redraw(fb *framebuffer.Device, fullScreen bool) (uint32, error) {
 	}
 
 	if !fullScreen {
-		updateData.WaveformMode = WAVEFORM_MODE_GC4
+		updateData.WaveformMode = WaveformModeGC16
 		updateData.UpdateMode = UPDATE_MODE_PARTIAL
 	}
 
