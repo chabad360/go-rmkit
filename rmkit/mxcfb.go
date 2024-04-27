@@ -54,13 +54,13 @@ type MxcfbRect struct {
 	Top, Left, Width, Height uint32
 }
 
-type GS_MODE uint32
+type GrayscaleMode uint32
 
 const (
-	GRAYSCALE_8BIT          GS_MODE = 0x1
-	GRAYSCALE_8BIT_INVERTED GS_MODE = 0x2
-	GRAYSCALE_4BIT          GS_MODE = 0x3
-	GRAYSCALE_4BIT_INVERTED GS_MODE = 0x4
+	Grayscale8Bit         GrayscaleMode = 0x1
+	Grayscale8BitInverted GrayscaleMode = 0x2
+	Grayscale4Bit         GrayscaleMode = 0x3
+	Grayscale4BitInverted GrayscaleMode = 0x4
 )
 
 type AUTO_UPDATE_MODE int
@@ -85,21 +85,25 @@ const (
 	UPDATE_MODE_FULL    UPDATE_MODE = 0x1
 )
 
-type WAVEFORM_MODE uint32
+type WaveformMode uint32
 
 const (
-	WAVEFORM_MODE_GLR16 WAVEFORM_MODE = 4
-	WAVEFORM_MODE_GLD16 WAVEFORM_MODE = 5
+	WAVEFORM_MODE_GLR16 WaveformMode = 4
+	WAVEFORM_MODE_GLD16 WaveformMode = 5
 
-	WAVEFORM_MODE_INIT   WAVEFORM_MODE = 0x0 /* Screen goes to white (clears) */
-	WAVEFORM_MODE_DU     WAVEFORM_MODE = 0x1 /* Grey->white/grey->black */
-	WAVEFORM_MODE_GC16   WAVEFORM_MODE = 0x2 /* High fidelity (flashing) */
-	WAVEFORM_MODE_GC4    WAVEFORM_MODE = 0x3 /* Lower fidelity */
-	WAVEFORM_MODE_A2     WAVEFORM_MODE = 0x4 /* Fast black/white animation */
-	WAVEFORM_MODE_DU4    WAVEFORM_MODE = 0x7
-	WAVEFORM_MODE_REAGLD WAVEFORM_MODE = 0x9
+	// WaveformModeInit flashes the screen black and white a couple of times to fully clear the display
+	WaveformModeInit WaveformMode = 0x0
+	// WaveformModeDU very quickly can make the changes that are to white or black pixes (but not grey)
+	WaveformModeDU WaveformMode = 0x1
+	// WaveformModeGC16 is the high fidelity mode, which flashes the screen to make the changes
+	WaveformModeGC16  WaveformMode = 0x2
+	WAVEFORM_MODE_GC4 WaveformMode = 0x3 /* Lower fidelity */
+	WAVEFORM_MODE_A2  WaveformMode = 0x4 /* Fast black/white animation */
+	// WaveformModeDU4 is the same as WaveformModeDU, but supports some gray tones
+	WaveformModeDU4      WaveformMode = 0x7
+	WAVEFORM_MODE_REAGLD WaveformMode = 0x9
 
-	WAVEFORM_MODE_AUTO WAVEFORM_MODE = 257
+	WAVEFORM_MODE_AUTO WaveformMode = 257
 )
 
 type TEMP int32
@@ -148,7 +152,7 @@ type MxcfbAltBufferData struct {
 
 type MxcfbUpdateData struct {
 	UpdateRegion  MxcfbRect
-	WaveformMode  WAVEFORM_MODE
+	WaveformMode  WaveformMode
 	UpdateMode    UPDATE_MODE
 	UpdateMarker  uint32
 	Temp          TEMP
