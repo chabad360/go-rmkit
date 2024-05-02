@@ -10,8 +10,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-
-	"github.com/chabad360/framebuffer"
 )
 
 var umCount uint32 = 10000
@@ -21,8 +19,8 @@ func _um() uint32 {
 	return umCount
 }
 
-func InitRM() (*framebuffer.Device, error) {
-	fb, err := framebuffer.Open("/dev/fb0")
+func InitRM() (*Device, error) {
+	fb, err := Open("/dev/fb0")
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +35,13 @@ func InitRM() (*framebuffer.Device, error) {
 	return fb, nil
 }
 
-func Redraw(fb *framebuffer.Device, fullScreen bool) (uint32, error) {
-	if fb.Dirty() == image.Rect(0, 0, 0, 0) && !fullScreen {
-		return 0, errors.New("nothing to redraw")
-	}
+func Redraw(fb *Device, fullScreen bool) (uint32, error) {
+	// if fb.Dirty() == image.Rect(0, 0, 0, 0) && !fullScreen {
+	// 	return 0, errors.New("nothing to redraw")
+	// }
 
 	var updateRect MxcfbRect
-	if fullScreen {
+	if fullScreen || fb.Dirty() == image.Rect(0, 0, 0, 0) {
 		updateRect = MxcfbRect{
 			Top:    0,
 			Left:   0,
@@ -65,7 +63,7 @@ func Redraw(fb *framebuffer.Device, fullScreen bool) (uint32, error) {
 
 	updateData := MxcfbUpdateData{
 		UpdateRegion: updateRect,
-		WaveformMode: WaveformModeInit,
+		WaveformMode: WaveformModeGC16,
 		UpdateMode:   UPDATE_MODE_FULL,
 		DitherMode:   EDPC_FLAG_EXP1,
 		Temp:         TEMP_USE_REMARKABLE_DRAW,
@@ -86,7 +84,7 @@ func Redraw(fb *framebuffer.Device, fullScreen bool) (uint32, error) {
 	return updateData.UpdateMarker, nil
 }
 
-func WaitForRedraw(fb *framebuffer.Device, marker uint32) error {
+func WaitForRedraw(fb *Device, marker uint32) error {
 	if marker == 0 {
 		return errors.New("invalid marker")
 	}
@@ -102,12 +100,12 @@ func WaitForRedraw(fb *framebuffer.Device, marker uint32) error {
 	return nil
 }
 
-func ClearScreen(fb *framebuffer.Device) (uint32, error) {
+func ClearScreen(fb *Device) (uint32, error) {
 	draw.Draw(fb, fb.Bounds(), image.NewUniform(White), image.Point{}, draw.Src)
 	return Redraw(fb, true)
 }
 
-func ioctl[T any](fb *framebuffer.Device, cmd uintptr, arg *T) (uintptr, uintptr, error) {
+func ioctl[T any](fb *Device, cmd uintptr, arg *T) (uintptr, uintptr, error) {
 	r1, r2, errno := syscall.Syscall(syscall.SYS_IOCTL, fb.File.Fd(), cmd, uintptr(unsafe.Pointer(arg)))
 	if errno != 0 {
 		return r1, r2, &os.SyscallError{"SYS_IOCTL", errno}

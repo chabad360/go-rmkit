@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/chabad360/framebuffer v1.0.1-0.20240426083635-7bb7bc37a1bb
 	github.com/kenshaw/evdev v0.0.0-00010101000000-000000000000
+	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a
 	golang.org/x/sys v0.19.0
 )
 
@@ -20,7 +21,7 @@ require (
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.4.0 // indirect
 	github.com/rymdport/portal v0.2.2 // indirect
-	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a // indirect
+	github.com/vitali-fedulov/images4 v1.3.1 // indirect
 )
 
 require (

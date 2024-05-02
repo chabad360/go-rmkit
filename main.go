@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
 	"os"
+	"time"
 
 	touch2 "golang.org/x/mobile/event/touch"
 
@@ -77,11 +77,11 @@ func main() {
 		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item1Button))),
 	))))
 
-	item2Button := widget.NewButton("Start Tutorial", func() {})
+	item2Button := widget.NewButton("Exit", func() {})
 	item2Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
 	item2Button.IconPlacement = widget.ButtonIconTrailingText
 	item2Button.OnTapped = func() {
-		item2Button.SetText("Tutorial Started")
+		panic("Exiting...")
 	}
 
 	item2Image := canvas.NewImageFromResource(theme.FyneLogo())
@@ -136,9 +136,39 @@ func main() {
 
 	eC := make(chan any)
 
-	a := app.NewWithSoftwareDriver("test", func(i image.Image) {
-		draw.Draw(fb, fb.Bounds(), i, image.Point{}, draw.Src)
-		m, err = rmkit.Redraw(fb, false)
+	a := app.NewWithSoftwareDriver("test", func(img image.Image) {
+		fmt.Println("Rendering canvas")
+		t := time.Now()
+
+		imgR := img.(*image.NRGBA)
+		// if imgR.Bounds().Dx() != fb.Bounds().Dx() || imgR.Bounds().Dy() != fb.Bounds().Dy() || len(imgR.Pix)/4 < len(fb.Pixels)/2 {
+		// 	fmt.Println("x:", imgR.Bounds().Dx(), fb.Bounds().Dx())
+		// 	fmt.Println("y:", imgR.Bounds().Dy(), fb.Bounds().Dy())
+		// 	fmt.Println("arr:", len(imgR.Pix)/4, len(fb.Pixels)/2)
+		// 	panic("image size does not match framebuffer size")
+		// }
+		// draw.Draw(fb, fb.Bounds(), img, image.Point{}, draw.Src)
+		for i := 0; i < len(imgR.Pix)/4; i++ {
+			r := imgR.Pix[i*4 : i*4+3 : i*4+3]
+			rgb := rmkit.ToRGB565(
+				uint32(r[0])|uint32(r[0])<<8,
+				uint32(r[1])|uint32(r[1])<<8,
+				uint32(r[2])|uint32(r[2])<<8,
+			)
+			// if rgb != rmkit.RGB565(uint16(fb.Pixels[p])|uint16(fb.Pixels[p+1])<<8) {
+			// x := i % fb.Bounds().Dx()
+			// y := i / fb.Bounds().Dx()
+			// fmt.Println(x, y)
+
+			// 	fb.DirtyBounds = fb.DirtyBounds.Union(image.Rect(x, y, x+1, y+1))
+
+			pixelOffset := (i * 2) + ((i * 2 / (fb.Pitch - 8)) * 8)
+			p := fb.Pixels[pixelOffset : pixelOffset+2 : pixelOffset+2]
+			p[0] = byte(rgb & 0xFF)
+			p[1] = byte(rgb >> 8)
+			// }
+		}
+		m, err = rmkit.Redraw(fb, true)
 		if err != nil {
 			if err.Error() == "nothing to redraw" {
 				return
@@ -146,7 +176,7 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Println("Redrew screen, ", m)
+		fmt.Println("Redrew screen, ", m, time.Since(t))
 		err = rmkit.WaitForRedraw(fb, m)
 		if err != nil {
 			panic(err)
