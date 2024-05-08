@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
+	"math/rand/v2"
 	"os"
+	"strconv"
 	"time"
 
 	touch2 "golang.org/x/mobile/event/touch"
@@ -58,7 +61,7 @@ func main() {
 	item1Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
 	item1Button.IconPlacement = widget.ButtonIconTrailingText
 	item1Button.OnTapped = func() {
-		item1Button.SetText("Tutorial Started")
+		item1Button.SetText("Press: " + strconv.Itoa(rand.Int()%1000))
 	}
 
 	item1Image := canvas.NewImageFromResource(theme.FyneLogo())
@@ -136,9 +139,21 @@ func main() {
 
 	eC := make(chan any)
 
-	a := app.NewWithSoftwareDriver("test", func(img image.Image) {
+	prevImage := image.NewRGBA(fb.Bounds())
+	draw.Draw(prevImage, prevImage.Bounds(), image.NewUniform(color.RGBA{R: 255, G: 255, B: 255, A: 255}), image.Point{}, draw.Src)
+	a := app.NewWithSoftwareDriver("test", func(img image.Image, rects []image.Rectangle) {
 		fmt.Println("Rendering canvas")
 		t := time.Now()
+		var rect image.Rectangle
+		if len(rects) == 0 {
+			rect = img.Bounds()
+		} else {
+			rect = rects[0]
+			for _, r := range rects {
+				rect = rect.Union(r)
+			}
+		}
+		fmt.Println("Rect:", rect)
 
 		imgR := img.(*image.NRGBA)
 		// if imgR.Bounds().Dx() != fb.Bounds().Dx() || imgR.Bounds().Dy() != fb.Bounds().Dy() || len(imgR.Pix)/4 < len(fb.Pixels)/2 {
@@ -148,27 +163,53 @@ func main() {
 		// 	panic("image size does not match framebuffer size")
 		// }
 		// draw.Draw(fb, fb.Bounds(), img, image.Point{}, draw.Src)
+		// Dx := fb.Bounds().Dx()
+		// dirty := false
+		const ma = 1<<16 - 1
 		for i := 0; i < len(imgR.Pix)/4; i++ {
-			r := imgR.Pix[i*4 : i*4+3 : i*4+3]
+			pixArr := imgR.Pix[i*4 : i*4+4 : i*4+4]
+			prevArr := prevImage.Pix[i*4 : i*4+4 : i*4+4]
+			a := uint32(pixArr[3]) * 0x101
+			if a == 0 {
+				continue
+			}
+
+			r := uint32(pixArr[0]) * a / 0xff
+			g := uint32(pixArr[1]) * a / 0xff
+			b := uint32(pixArr[2]) * a / 0xff
+			am := (ma - a) * 0x101
+			dr := uint32(prevArr[0]) | uint32(prevArr[0])<<8
+			dg := uint32(prevArr[1]) | uint32(prevArr[1])<<8
+			db := uint32(prevArr[2]) | uint32(prevArr[2])<<8
+
 			rgb := rmkit.ToRGB565(
-				uint32(r[0])|uint32(r[0])<<8,
-				uint32(r[1])|uint32(r[1])<<8,
-				uint32(r[2])|uint32(r[2])<<8,
+				dr*am/ma+r,
+				dg*am/ma+g,
+				db*am/ma+b,
 			)
-			// if rgb != rmkit.RGB565(uint16(fb.Pixels[p])|uint16(fb.Pixels[p+1])<<8) {
-			// x := i % fb.Bounds().Dx()
-			// y := i / fb.Bounds().Dx()
-			// fmt.Println(x, y)
+
+			prevArr[0] = uint8((dr*am/ma + r) >> 8)
+			prevArr[1] = uint8((dg*am/ma + g) >> 8)
+			prevArr[2] = uint8((db*am/ma + b) >> 8)
 
 			// 	fb.DirtyBounds = fb.DirtyBounds.Union(image.Rect(x, y, x+1, y+1))
 
 			pixelOffset := (i * 2) + ((i * 2 / (fb.Pitch - 8)) * 8)
 			p := fb.Pixels[pixelOffset : pixelOffset+2 : pixelOffset+2]
+			// if p[0] != byte(rgb&0xFF) || p[1] != byte(rgb>>8) {
+			// 	x := i % Dx
+			// 	y := i / Dx
+			// 	if !dirty {
+			// 		dirty = true
+			// 		fb.DirtyBounds = image.Rect(x, y, x+1, y+1)
+			// 	}
+			// 	fb.DirtyBounds = fb.DirtyBounds.Union(image.Rect(x, y, x+1, y+1))
 			p[0] = byte(rgb & 0xFF)
 			p[1] = byte(rgb >> 8)
 			// }
 		}
-		m, err = rmkit.Redraw(fb, true)
+		fb.DirtyBounds = fb.Bounds()
+		m, err = rmkit.Redraw(fb, false)
 		if err != nil {
 			if err.Error() == "nothing to redraw" {
 				return
@@ -177,10 +218,12 @@ func main() {
 		}
 
 		fmt.Println("Redrew screen, ", m, time.Since(t))
+		t = time.Now()
 		err = rmkit.WaitForRedraw(fb, m)
 		if err != nil {
 			panic(err)
 		}
+		fmt.Println("Hardware took", time.Since(t))
 	}, eC)
 
 	a.Settings().SetTheme(t)

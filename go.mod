@@ -3,11 +3,11 @@ module rm-cal
 go 1.22
 
 require (
-	github.com/chabad360/framebuffer v1.0.1-0.20240426083635-7bb7bc37a1bb
 	github.com/kenshaw/evdev v0.0.0-00010101000000-000000000000
 	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a
 	golang.org/x/sys v0.19.0
 )
+
 
 require (
 	fyne.io/systray v1.10.1-0.20231230205326-d160fd363db9 // indirect

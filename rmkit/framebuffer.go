@@ -36,12 +36,12 @@ func InitRM() (*Device, error) {
 }
 
 func Redraw(fb *Device, fullScreen bool) (uint32, error) {
-	// if fb.Dirty() == image.Rect(0, 0, 0, 0) && !fullScreen {
-	// 	return 0, errors.New("nothing to redraw")
-	// }
+	if fb.Dirty() == image.Rect(0, 0, 0, 0) && !fullScreen {
+		return 0, errors.New("nothing to redraw")
+	}
 
 	var updateRect MxcfbRect
-	if fullScreen || fb.Dirty() == image.Rect(0, 0, 0, 0) {
+	if fullScreen {
 		updateRect = MxcfbRect{
 			Top:    0,
 			Left:   0,
