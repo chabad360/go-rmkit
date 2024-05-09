@@ -163,12 +163,13 @@ func main() {
 		// 	panic("image size does not match framebuffer size")
 		// }
 		// draw.Draw(fb, fb.Bounds(), img, image.Point{}, draw.Src)
-		// Dx := fb.Bounds().Dx()
-		// dirty := false
+		Dx := fb.Bounds().Dx()
+		dirty := false
+		minX, minY, maxX, maxY := 0, 0, 0, 0
 		const ma = 1<<16 - 1
 		for i := 0; i < len(imgR.Pix)/4; i++ {
 			pixArr := imgR.Pix[i*4 : i*4+4 : i*4+4]
-			prevArr := prevImage.Pix[i*4 : i*4+4 : i*4+4]
+			prevArr := prevImage.Pix[i*4 : i*4+3 : i*4+3]
 			a := uint32(pixArr[3]) * 0x101
 			if a == 0 {
 				continue
@@ -182,33 +183,36 @@ func main() {
 			dg := uint32(prevArr[1]) | uint32(prevArr[1])<<8
 			db := uint32(prevArr[2]) | uint32(prevArr[2])<<8
 
-			rgb := rmkit.ToRGB565(
-				dr*am/ma+r,
-				dg*am/ma+g,
-				db*am/ma+b,
-			)
+			dr = dr*am/ma + r
+			dg = dg*am/ma + g
+			db = db*am/ma + b
 
-			prevArr[0] = uint8((dr*am/ma + r) >> 8)
-			prevArr[1] = uint8((dg*am/ma + g) >> 8)
-			prevArr[2] = uint8((db*am/ma + b) >> 8)
+			prevArr[0] = uint8(dr >> 8)
+			prevArr[1] = uint8(dg >> 8)
+			prevArr[2] = uint8(db >> 8)
+
+			rgb := rmkit.ToRGB565(dr, dg, db)
 
 			// 	fb.DirtyBounds = fb.DirtyBounds.Union(image.Rect(x, y, x+1, y+1))
 
 			pixelOffset := (i * 2) + ((i * 2 / (fb.Pitch - 8)) * 8)
 			p := fb.Pixels[pixelOffset : pixelOffset+2 : pixelOffset+2]
 			// if p[0] != byte(rgb&0xFF) || p[1] != byte(rgb>>8) {
-			// 	x := i % Dx
-			// 	y := i / Dx
-			// 	if !dirty {
-			// 		dirty = true
-			// 		fb.DirtyBounds = image.Rect(x, y, x+1, y+1)
-			// 	}
-			// 	fb.DirtyBounds = fb.DirtyBounds.Union(image.Rect(x, y, x+1, y+1))
+			x := i % Dx
+			y := i / Dx
+			if !dirty {
+				dirty = true
+				minX, minY, maxX, maxY = x, y, x, y
+			}
+			// fb.DirtyBounds = fb.DirtyBounds.Union(image.Rect(x, y, x+1, y+1))
+			minX, minY, maxX, maxY = min(minX, x), min(minY, y), max(maxX, x), max(maxY, y)
 			p[0] = byte(rgb & 0xFF)
 			p[1] = byte(rgb >> 8)
 			// }
 		}
-		fb.DirtyBounds = fb.Bounds()
+		// fb.DirtyBounds = fb.Bounds()
+		fb.DirtyBounds = image.Rect(minX, minY, maxX+1, maxY+1)
+		fmt.Println(fb.Dirty())
 		m, err = rmkit.Redraw(fb, false)
 		if err != nil {
 			if err.Error() == "nothing to redraw" {

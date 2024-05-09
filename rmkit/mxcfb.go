@@ -96,9 +96,9 @@ const (
 	// WaveformModeDU very quickly can make the changes that are to white or black pixes (but not grey)
 	WaveformModeDU WaveformMode = 0x1
 	// WaveformModeGC16 is the high fidelity mode, which flashes the screen to make the changes
-	WaveformModeGC16  WaveformMode = 0x2
-	WAVEFORM_MODE_GC4 WaveformMode = 0x3 /* Lower fidelity */
-	WAVEFORM_MODE_A2  WaveformMode = 0x4 /* Fast black/white animation */
+	WaveformModeGC16 WaveformMode = 0x2
+	WaveformModeGC4  WaveformMode = 0x3 /* Lower fidelity */
+	WAVEFORM_MODE_A2 WaveformMode = 0x4 /* Fast black/white animation */
 	// WaveformModeDU4 is the same as WaveformModeDU, but supports some gray tones
 	WaveformModeDU4      WaveformMode = 0x7
 	WAVEFORM_MODE_REAGLD WaveformMode = 0x9
