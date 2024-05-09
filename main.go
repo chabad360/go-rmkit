@@ -53,108 +53,13 @@ func main() {
 
 	t := &rmkit.RMTheme{}
 
-	backButton := widget.NewButton("Back", func() {})
-	backButton.SetIcon(t.Icon(theme.IconNameNavigateBack))
-	bbCon := container.NewHBox(backButton)
-
-	item1Button := widget.NewButton("Start Tutorial", func() {})
-	item1Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
-	item1Button.IconPlacement = widget.ButtonIconTrailingText
-	item1Button.OnTapped = func() {
-		item1Button.SetText("Press: " + strconv.Itoa(rand.Int()%1000))
-	}
-
-	item1Image := canvas.NewImageFromResource(theme.FyneLogo())
-	item1Image.FillMode = canvas.ImageFillContain
-	item1Image.SetMinSize(fyne.NewSize(200, 200))
-
-	item1Header := widget.NewLabel("Fyne Toolkit")
-	item1Header.TextStyle = fyne.TextStyle{Bold: true}
-
-	item1Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
-
-	item1 := container.NewPadded(frame(container.NewPadded(container.NewVBox(
-		container.NewBorder(nil, nil, item1Image, nil),
-		item1Header,
-		item1Label,
-		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item1Button))),
-	))))
-
-	item2Button := widget.NewButton("Exit", func() {})
-	item2Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
-	item2Button.IconPlacement = widget.ButtonIconTrailingText
-	item2Button.OnTapped = func() {
-		panic("Exiting...")
-	}
-
-	item2Image := canvas.NewImageFromResource(theme.FyneLogo())
-	item2Image.FillMode = canvas.ImageFillContain
-	item2Image.SetMinSize(fyne.NewSize(200, 200))
-
-	item2Header := widget.NewLabel("Fyne Toolkit")
-	item2Header.TextStyle = fyne.TextStyle{Bold: true}
-
-	item2Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
-
-	item2 := container.NewPadded(frame(container.NewPadded(container.NewVBox(
-		container.NewBorder(nil, nil, item2Image, nil),
-		item2Header,
-		item2Label,
-		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item2Button))),
-	))))
-
-	contentGrid := container.NewGridWithColumns(2, item1, item2)
-
-	label := widget.NewLabel("Guides")
-	label.TextStyle = fyne.TextStyle{Bold: true}
-
-	con := container.NewBorder(bbCon, nil, nil, nil,
-		container.NewPadded(container.NewVBox(label, contentGrid)))
-
-	s := canvas.NewRectangle(rmkit.White)
-	s.SetMinSize(fyne.NewSize(10, 10))
-	//
-	// c := software.NewCanvas()
-	// c.SetContent(container.NewBorder(s, s, s, s, con))
-	// c.Resize(fyne.NewSize(float32(fb.Bounds().Dx()), float32(fb.Bounds().Dy())))
-	//
-	// i := software.RenderCanvas(c, t)
-	//
-	// fmt.Println("Rendered canvas")
-	//
-	// draw.Draw(fb, fb.Bounds(), i, image.Point{}, draw.Src)
-	// m, err = rmkit.Redraw(fb, false)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	//
-	// fmt.Println("Redrew screen, ", m)
-	//
-	// err = rmkit.WaitForRedraw(fb, m)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	//
-	// fmt.Println("Waited for redraw")
-
 	eC := make(chan any)
 
 	prevImage := image.NewRGBA(fb.Bounds())
 	draw.Draw(prevImage, prevImage.Bounds(), image.NewUniform(color.RGBA{R: 255, G: 255, B: 255, A: 255}), image.Point{}, draw.Src)
-	a := app.NewWithSoftwareDriver("test", func(img image.Image, rects []image.Rectangle) {
+	a := app.NewWithSoftwareDriver("test", func(img image.Image) {
 		fmt.Println("Rendering canvas")
 		t := time.Now()
-		var rect image.Rectangle
-		if len(rects) == 0 {
-			rect = img.Bounds()
-		} else {
-			rect = rects[0]
-			for _, r := range rects {
-				rect = rect.Union(r)
-			}
-		}
-		fmt.Println("Rect:", rect)
-
 		imgR := img.(*image.NRGBA)
 		// if imgR.Bounds().Dx() != fb.Bounds().Dx() || imgR.Bounds().Dy() != fb.Bounds().Dy() || len(imgR.Pix)/4 < len(fb.Pixels)/2 {
 		// 	fmt.Println("x:", imgR.Bounds().Dx(), fb.Bounds().Dx())
@@ -228,12 +133,70 @@ func main() {
 			panic(err)
 		}
 		fmt.Println("Hardware took", time.Since(t))
-	}, eC)
+	}, eC, true)
 
 	a.Settings().SetTheme(t)
 
+	backButton := widget.NewButton("Back", func() {})
+	backButton.SetIcon(t.Icon(theme.IconNameNavigateBack))
+	bbCon := container.NewHBox(backButton)
+
+	item1Button := widget.NewButton("Start Tutorial", func() {})
+	item1Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
+	item1Button.IconPlacement = widget.ButtonIconTrailingText
+	item1Button.OnTapped = func() {
+		item1Button.SetText("Press: " + strconv.Itoa(rand.Int()%1000))
+	}
+
+	item1Image := canvas.NewImageFromResource(theme.FyneLogo())
+	item1Image.FillMode = canvas.ImageFillContain
+	item1Image.SetMinSize(fyne.NewSize(200, 200))
+
+	item1Header := widget.NewLabel("Fyne Toolkit")
+	item1Header.TextStyle = fyne.TextStyle{Bold: true}
+
+	item1Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
+
+	item1 := container.NewPadded(frame(container.NewPadded(container.NewVBox(
+		container.NewBorder(nil, nil, item1Image, nil),
+		item1Header,
+		item1Label,
+		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item1Button))),
+	))))
+
+	item2Button := widget.NewButton("Exit", func() {})
+	item2Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
+	item2Button.IconPlacement = widget.ButtonIconTrailingText
+	item2Button.OnTapped = func() {
+		panic("Exiting...")
+	}
+
+	item2Image := canvas.NewImageFromResource(theme.FyneLogo())
+	item2Image.FillMode = canvas.ImageFillContain
+	item2Image.SetMinSize(fyne.NewSize(200, 200))
+
+	item2Header := widget.NewLabel("Fyne Toolkit")
+	item2Header.TextStyle = fyne.TextStyle{Bold: true}
+
+	item2Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
+
+	item2 := container.NewPadded(frame(container.NewPadded(container.NewVBox(
+		container.NewBorder(nil, nil, item2Image, nil),
+		item2Header,
+		item2Label,
+		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item2Button))),
+	))))
+
+	contentGrid := container.NewGridWithColumns(2, item1, item2)
+
+	label := widget.NewLabel("Guides")
+	label.TextStyle = fyne.TextStyle{Bold: true}
+
+	con := container.NewBorder(bbCon, nil, nil, nil,
+		container.NewPadded(container.NewVBox(label, contentGrid)))
+
 	w := a.NewWindow("test")
-	w.SetContent(container.NewBorder(s, s, s, s, con))
+	w.SetContent(container.NewPadded(con))
 	w.Resize(fyne.NewSize(float32(fb.Bounds().Dx()), float32(fb.Bounds().Dy())))
 	w.SetFullScreen(true)
 	w.SetFixedSize(true)
