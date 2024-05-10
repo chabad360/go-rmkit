@@ -72,3 +72,16 @@ func (t *RMTheme) Size(name fyne.ThemeSizeName) float32 {
 		return d
 	}
 }
+
+type RMThemeVariant struct {
+	RMTheme
+}
+
+func (t *RMThemeVariant) Size(name fyne.ThemeSizeName) float32 {
+	switch name {
+	case theme.SizeNameInnerPadding:
+		return 20
+	default:
+		return t.RMTheme.Size(name)
+	}
+}

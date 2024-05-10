@@ -22,7 +22,7 @@ import (
 
 	"github.com/kenshaw/evdev"
 
-	"rm-cal/rmkit"
+	"go-rmkit/rmkit"
 )
 
 func main() {
@@ -157,12 +157,12 @@ func main() {
 
 	item1Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
 
-	item1 := container.NewPadded(frame(container.NewPadded(container.NewVBox(
+	item1 := container.NewPadded(frame(container.NewThemeOverride(container.NewPadded(container.NewPadded(container.NewVBox(
 		container.NewBorder(nil, nil, item1Image, nil),
 		item1Header,
 		item1Label,
 		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item1Button))),
-	))))
+	))), t)))
 
 	item2Button := widget.NewButton("Exit", func() {})
 	item2Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
@@ -180,12 +180,12 @@ func main() {
 
 	item2Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
 
-	item2 := container.NewPadded(frame(container.NewPadded(container.NewVBox(
+	item2 := container.NewPadded(frame(container.NewThemeOverride(container.NewPadded(container.NewPadded(container.NewVBox(
 		container.NewBorder(nil, nil, item2Image, nil),
 		item2Header,
 		item2Label,
 		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item2Button))),
-	))))
+	))), t)))
 
 	contentGrid := container.NewGridWithColumns(2, item1, item2)
 
@@ -217,9 +217,16 @@ func main() {
 
 	go func() {
 		touchEv := touch2.Event{}
+		begun := false
 		for {
 			select {
-			case e := <-touchC:
+			case e, ok := <-touchC:
+				if !ok {
+					panic("touch closed")
+				}
+				if e == nil {
+					panic("nil touch event")
+				}
 				ev := e.Event
 				if ev.Code == uint16(evdev.AbsoluteMTPositionX) {
 					// ev.Code = uint16(evdev.AbsoluteMTPositionY)
@@ -234,14 +241,16 @@ func main() {
 				} else if ev.Code == uint16(evdev.AbsoluteMTTrackingID) {
 					if ev.Value == -1 {
 						touchEv.Type = touch2.TypeEnd
-					} else {
-						if touchEv.Type == touch2.TypeEnd {
-							touchEv.Type = touch2.TypeBegin
-						} else {
-							touchEv.Type = touch2.TypeMove
-						}
+						begun = false
+					} else if touchEv.Type == touch2.TypeEnd {
+						touchEv.Type = touch2.TypeBegin
 					}
 				} else if ev.Type == evdev.EventSync {
+					if touchEv.Type == touch2.TypeBegin && !begun {
+						begun = true
+					} else if begun {
+						touchEv.Type = touch2.TypeMove
+					}
 					eC <- touchEv
 				}
 			}
@@ -264,5 +273,5 @@ func frame(c fyne.CanvasObject) fyne.CanvasObject {
 
 	s2 := canvas.NewRectangle(rmkit.White)
 
-	return container.NewStack(s2, container.NewPadded(c), s1)
+	return container.NewStack(s2, container.NewThemeOverride(c, &rmkit.RMThemeVariant{}), s1)
 }
