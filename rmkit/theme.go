@@ -5,6 +5,8 @@ import (
 	"image/color"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 )
 
@@ -84,4 +86,15 @@ func (t *RMThemeVariant) Size(name fyne.ThemeSizeName) float32 {
 	default:
 		return t.RMTheme.Size(name)
 	}
+}
+
+func Frame(c fyne.CanvasObject) fyne.CanvasObject {
+	s1 := canvas.NewRectangle(color.RGBA{0, 0, 0, 0})
+	s1.StrokeColor = Black
+	s1.StrokeWidth = 3
+	s1.CornerRadius = -1
+
+	s2 := canvas.NewRectangle(White)
+
+	return container.NewStack(s2, container.NewThemeOverride(c, &RMThemeVariant{}), s1)
 }

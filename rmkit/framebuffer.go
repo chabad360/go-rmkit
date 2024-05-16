@@ -71,7 +71,7 @@ func Redraw(fb *Device, fullScreen bool) (uint32, error) {
 	}
 
 	if !fullScreen {
-		updateData.WaveformMode = WaveformModeGC4
+		updateData.WaveformMode = WaveformModeGC16
 		updateData.UpdateMode = UPDATE_MODE_PARTIAL
 	}
 

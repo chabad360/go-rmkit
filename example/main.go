@@ -19,10 +19,9 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"go-rmkit/rmkit"
 
 	"github.com/kenshaw/evdev"
-
-	"go-rmkit/rmkit"
 )
 
 func main() {
@@ -141,6 +140,9 @@ func main() {
 	backButton.SetIcon(t.Icon(theme.IconNameNavigateBack))
 	bbCon := container.NewHBox(backButton)
 
+	square := canvas.NewRectangle(color.RGBA{R: 100, G: 100, B: 100, A: 255})
+	square.SetMinSize(fyne.NewSize(50, 100))
+
 	item1Button := widget.NewButton("Start Tutorial", func() {})
 	item1Button.SetIcon(t.Icon(theme.IconNameNavigateNext))
 	item1Button.IconPlacement = widget.ButtonIconTrailingText
@@ -157,11 +159,11 @@ func main() {
 
 	item1Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
 
-	item1 := container.NewPadded(frame(container.NewThemeOverride(container.NewPadded(container.NewPadded(container.NewVBox(
+	item1 := container.NewPadded(rmkit.Frame(container.NewThemeOverride(container.NewPadded(container.NewPadded(container.NewVBox(
 		container.NewBorder(nil, nil, item1Image, nil),
 		item1Header,
 		item1Label,
-		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item1Button))),
+		container.NewBorder(nil, nil, nil, container.NewPadded(rmkit.Frame(container.NewStack(item1Button, square)))),
 	))), t)))
 
 	item2Button := widget.NewButton("Exit", func() {})
@@ -180,11 +182,11 @@ func main() {
 
 	item2Label := widget.NewLabel("An easy-to-use UI toolkit \nand app API written in Go.")
 
-	item2 := container.NewPadded(frame(container.NewThemeOverride(container.NewPadded(container.NewPadded(container.NewVBox(
+	item2 := container.NewPadded(rmkit.Frame(container.NewThemeOverride(container.NewPadded(container.NewPadded(container.NewVBox(
 		container.NewBorder(nil, nil, item2Image, nil),
 		item2Header,
 		item2Label,
-		container.NewBorder(nil, nil, nil, container.NewPadded(frame(item2Button))),
+		container.NewBorder(nil, nil, nil, container.NewPadded(rmkit.Frame(item2Button))),
 	))), t)))
 
 	contentGrid := container.NewGridWithColumns(2, item1, item2)
@@ -264,14 +266,3 @@ func main() {
 
 const xRatio = float32(1404) / float32(767)
 const yRatio = float32(1872) / float32(1023)
-
-func frame(c fyne.CanvasObject) fyne.CanvasObject {
-	s1 := canvas.NewRectangle(color.RGBA{0, 0, 0, 0})
-	s1.StrokeColor = rmkit.Black
-	s1.StrokeWidth = 3
-	s1.CornerRadius = -1
-
-	s2 := canvas.NewRectangle(rmkit.White)
-
-	return container.NewStack(s2, container.NewThemeOverride(c, &rmkit.RMThemeVariant{}), s1)
-}
