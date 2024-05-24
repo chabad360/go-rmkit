@@ -22,6 +22,7 @@ import (
 	"image"
 	"image/color"
 	"os"
+	"sync"
 	"syscall"
 )
 
@@ -68,6 +69,7 @@ func Open(device string) (*Device, error) {
 		image.Rect(0, 0, int(varInfo.xres), int(varInfo.yres)),
 		colorModel,
 		image.Rect(0, 0, 0, 0),
+		sync.RWMutex{},
 	}, nil
 }
 
@@ -79,6 +81,8 @@ type Device struct {
 	bounds      image.Rectangle
 	colorModel  color.Model
 	DirtyBounds image.Rectangle
+
+	Lock sync.RWMutex
 }
 
 // Close unmaps the framebuffer memory and closes the device file. Call this
@@ -100,6 +104,8 @@ func (d *Device) ColorModel() color.Model {
 
 // At implements the image.Image (and draw.Image) interface.
 func (d *Device) At(x, y int) color.Color {
+	d.Lock.RLock()
+	defer d.Lock.RUnlock()
 	if x < d.bounds.Min.X || x >= d.bounds.Max.X ||
 		y < d.bounds.Min.Y || y >= d.bounds.Max.Y {
 		return RGB565(0)
@@ -110,6 +116,8 @@ func (d *Device) At(x, y int) color.Color {
 
 // Set implements the draw.Image interface.
 func (d *Device) Set(x, y int, c color.Color) {
+	d.Lock.Lock()
+	defer d.Lock.Unlock()
 	// the min bounds are at 0,0 (see Open)
 	if x >= 0 && x < d.bounds.Max.X &&
 		y >= 0 && y < d.bounds.Max.Y {

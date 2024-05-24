@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/draw"
 	"os"
 	"syscall"
 	"unsafe"
@@ -71,7 +70,7 @@ func Redraw(fb *Device, fullScreen bool) (uint32, error) {
 	}
 
 	if !fullScreen {
-		updateData.WaveformMode = WaveformModeGC16
+		updateData.WaveformMode = WaveformModeGC4
 		updateData.UpdateMode = UPDATE_MODE_PARTIAL
 	}
 
@@ -101,7 +100,9 @@ func WaitForRedraw(fb *Device, marker uint32) error {
 }
 
 func ClearScreen(fb *Device) (uint32, error) {
-	draw.Draw(fb, fb.Bounds(), image.NewUniform(White), image.Point{}, draw.Src)
+	for i := range fb.Pixels {
+		fb.Pixels[i] = byte(White >> 8)
+	}
 	return Redraw(fb, true)
 }
 

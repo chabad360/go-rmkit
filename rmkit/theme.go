@@ -14,21 +14,21 @@ var _ fyne.Theme = (*RMTheme)(nil)
 
 type RMTheme struct{}
 
-var fyneWhite = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
-var fyneBlack = color.NRGBA{A: 255}
+var FyneWhite = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
+var FyneBlack = color.NRGBA{A: 255}
 
 func (t *RMTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return fyneWhite
+		return FyneWhite
 	case theme.ColorNameForeground:
-		return fyneBlack
+		return FyneBlack
 	case theme.ColorNameButton:
-		return fyneWhite
+		return FyneWhite
 	case theme.ColorNameInputBorder:
-		return fyneBlack
+		return FyneBlack
 	case theme.ColorNameShadow:
-		return fyneBlack
+		return FyneBlack
 	default:
 		d := theme.DefaultTheme().Color(name, variant)
 		fmt.Printf("Color %s, %d: %v\n", name, variant, d)
